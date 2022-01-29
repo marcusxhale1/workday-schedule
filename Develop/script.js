@@ -1,134 +1,43 @@
-var currentDate = document.querySelector("#current-date");
-var currentTime = moment();
+var saveButton = $(".saveButton");
+$("#currentDay").text(moment().format('dddd MMMM Do YYYY, h:mma'));
 
-currentDate.textContent = currentTime.format("MMM DD, YYYY - hh:mm:ss a");
 
-// tasks object to store in localStorage.
-var tasks = {
-    "9": [],
-    "10": [],
-    "11": [],
-    "12": [],
-    "13": [],
-    "14": [],
-    "15": [],
-    "16": [],
-    "17": []
-};
+// each specific time is it's own color wether time has past, right now, or in the future
+function goalsColor() {
+    var hour = moment().hours();
 
-// local storage
-var setTasks = function() {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-}
+    $(".static-time").each(function() {
+        var currTime = parseInt($(this).attr("id"));
 
-// load the tasks from localStorage and create tasks in the right row
-var getTasks = function() {
-    var loadedTasks = JSON.parse(localStorage.getItem("tasks"));
-    if (loadedTasks) {
-        tasks = loadedTasks
-
-        // for each key/value pair in tasks, create a task
-        $.each(tasks, function(hour, task) {
-            var hourDiv = $("#" + hour);
-            createTask(task, hourDiv);
-        })
-    }
-
-    // make sure the past/current/future time is reflected
-    auditTasks()
-}
-
-var createTask = function(taskText, hourDiv) {
-    var taskDiv = hourDiv.find(".task");
-    // create the task element
-    var taskP = $("<p>")
-        .addClass("task-text")
-        .text(taskText)
-    taskDiv.html(taskP);
-}
-
-var auditTasks = function() {
-    // changes color based on time of day and current time 
-
-    var currentHour = moment().hour();
-    $(".task-info").each( function() {
-        var elementHour = parseInt($(this).attr("id"));
-
-        // timing mechanisms for color change
-        if ( elementHour < currentHour ) {
-            $(this).removeClass(["present", "future"]).addClass("past");
-        }
-        else if ( elementHour === currentHour ) {
-            $(this).removeClass(["past", "future"]).addClass("present");
-        }
-        else {
-            $(this).removeClass(["past", "present"]).addClass("future");
+        if (currTime > hour) {
+            $(this).addClass("future");
+        } else if (currTime === hour) {
+            $(this).addClass("present");
+        } else {
+            $(this).addClass("past");
         }
     })
 };
 
-var replaceTextarea = function(textareaElement) {
-    /* keeps text in local storage and keeps it in p */
+// Clicking the save button on the page to save to local storage
+saveButton.on("click", function() {
+    var time = $(this).siblings(".time-hour").text();
+    var goal = $(this).siblings(".goal").val();
+    localStorage.setItem(time, goal);
+});
 
-    // elements
-    var taskInfo = textareaElement.closest(".task-info");
-    var textArea = taskInfo.find("textarea");
+//Referesh and see the the same goals listed for the day
+function useGoal() {
 
-    // get the time and task
-    var time = taskInfo.attr("id");
-    var text = textArea.val().trim();
+    $(".time-hour").each(function() {
+        var currTime = $(this).text();
+        var currGoal = localStorage.getItem(currTime);
 
-    // persist the data
-    tasks[time] = [text];  
-    setTasks();
-
-    // replaces text area with p element
-    createTask(text, taskInfo);
+        if(currGoal !== null) {
+            $(this).siblings(".goal").val(currGoal);
+        }
+    });
 }
 
-// click handler
-$(".task").click(function() {
-
-    // save the other tasks if they've already been clicked
-    $("textarea").each(function() {
-        replaceTextarea($(this));
-    })
-
-    // convert to a textarea element if the time hasn't passed
-    var time = $(this).closest(".task-info").attr("id");
-    if (parseInt(time) >= moment().hour())
-
-
-    // create a textInput element
-    var text = $(this).text();
-    // create a textInput element
-    var textInput = $("<textarea>")
-        .addClass("form-control")
-        .val(text);
-    // add the textInput element to the parent div
-    $(this).html(textInput);
-    textInput.trigger("focus");
-})
-
-// click handler
-$(".save").on("click", function() {
-    var taskInfo = $(this).closest(".task-info");
-    var textArea = taskInfo.find("textarea");
-    var time = taskInfo.attr("id");
-    var text = textArea.val().trim();
-    tasks[time] = text;
-    setTasks();
-    var taskP = $("<p>")
-        .addClass("task-text")
-        .text(text)
-    textArea.replaceWith(taskP);
-})
-
-// save button click handler
-$(".saveBtn").click(function() {
-    replaceTextarea($(this));
-})
-
-
-// get the tasks from localStorage on load.
-getTasks();
+goalsColor();
+useGoal();
